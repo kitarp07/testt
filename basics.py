@@ -5,6 +5,7 @@ pygame.mixer.init()
 pygame.display.init()
 pygame.font.init()
 
+
 tile_types = 33
 width = 800
 height = 640
@@ -32,6 +33,7 @@ coin_audio = pygame.mixer.Sound(f'sounds/coin.wav')
 enemy_audio = pygame.mixer.Sound(f'sounds/enemy.wav')
 die_audio = pygame.mixer.Sound(f'sounds/die.wav')
 jump_audio = pygame.mixer.Sound(f'sounds/jump.wav')
+click_audio = pygame.mixer.Sound(f'sounds/click.wav')
 
 images = []
 for i in range(tile_types):

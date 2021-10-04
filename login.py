@@ -3,12 +3,11 @@ from tkinter import *
 from tkinter import ttk, messagebox
 
 
-
-
 def main():
     root = Tk()
     app = Login(root)
     root.mainloop()
+
 
 class Login:
     def __init__(self, master):
@@ -26,13 +25,11 @@ class Login:
         title = Label(Frame_login, text="Login", font=("Impact", 22, "bold"), bg="white").place(x=10, y=20)
 
         # username
-        lbl_username = Label(Frame_login, text="Username", font=("Roboto", 14, "bold"), bg="white").place(x=10,
-                                                                                                          y=80)
+        lbl_username = Label(Frame_login, text="Username", font=("Roboto", 14, "bold"), bg="white").place(x=10, y=80)
         self.username = Entry(Frame_login, font=("Roboto", 14), bg="#E7E6E6")
         self.username.place(x=10, y=120)
 
-        lbl_password = Label(Frame_login, text="Password", font=("Roboto", 14, "bold"), bg="white").place(x=10,
-                                                                                                          y=170)
+        lbl_password = Label(Frame_login, text="Password", font=("Roboto", 14, "bold"), bg="white").place(x=10, y=170)
         self.password = Entry(Frame_login, font=("Roboto", 14), bg="#E7E6E6")
         self.password.place(x=10, y=220)
 
@@ -44,21 +41,21 @@ class Login:
 
     def new_window(self):
         self.new_window = Toplevel(self.master)
-        self.app = register(self.new_window)
+        self.app = Register(self.new_window)
 
     def login(self):
         db = sqlite3.connect('id.db')
         db.execute("CREATE TABLE IF NOT EXISTS id(username TEXT, password TEXT)")
         cursor = db.cursor()
-        cursor.execute("SELECT * FROM id where username=? AND password=?",
-                       (self.username.get(), self.password.get()))
+        cursor.execute("SELECT * FROM id where username=? AND password=?", (self.username.get(), self.password.get()))
         row = cursor.fetchall()
         if row:
             messagebox.showinfo('info', "Login successful")
         else:
             messagebox.showinfo('info', "Login failed")
 
-class register():
+
+class Register:
     def __init__(self, master):
         self.master = master
         self.master.title("Register")
@@ -73,13 +70,11 @@ class register():
         title = Label(Frame_login, text="Register", font=("Impact", 22, "bold"), bg="white").place(x=10, y=20)
 
         # username
-        lbl_username = Label(Frame_login, text="Username", font=("Roboto", 14, "bold"), bg="white").place(x=10,
-                                                                                                          y=80)
+        lbl_username = Label(Frame_login, text="Username", font=("Roboto", 14, "bold"), bg="white").place(x=10, y=80)
         self.username = Entry(Frame_login, font=("Roboto", 14), bg="#E7E6E6")
         self.username.place(x=10, y=120)
 
-        lbl_password = Label(Frame_login, text="Password", font=("Roboto", 14, "bold"), bg="white").place(x=10,
-                                                                                                          y=170)
+        lbl_password = Label(Frame_login, text="Password", font=("Roboto", 14, "bold"), bg="white").place(x=10, y=170)
         self.password = Entry(Frame_login, font=("Roboto", 14), bg="#E7E6E6")
         self.password.place(x=10, y=220)
 
@@ -97,8 +92,7 @@ class register():
         cursor = db.cursor()
         cursor.execute("INSERT INTO id(username, password) VALUES (?,?)", (uname, pword))
         db.commit()
-        cursor.execute("SELECT * FROM id where username=? AND password=?",
-                       (self.username.get(), self.password.get()))
+        cursor.execute("SELECT * FROM id where username=? AND password=?", (self.username.get(), self.password.get()))
         row = cursor.fetchall()
         if row:
             messagebox.showinfo('info', "Registration successful. \n You can login now")
@@ -108,8 +102,6 @@ class register():
     def back(self):
         self.master.destroy()
 
+
 if __name__ == '__main__':
     main()
-
-
-

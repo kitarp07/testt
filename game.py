@@ -1,7 +1,10 @@
 import os
+import sqlite3
+
 from bar import *
 import random
 import csv
+from button import Button
 
 pygame.init()
 pygame.font.init()
@@ -25,6 +28,8 @@ mountain_img = pygame.image.load('img/mountain.png').convert_alpha()
 sky_img = pygame.image.load('img/sky_cloud.png').convert_alpha()
 
 restart_img = pygame.image.load('img/restart_btn.png').convert_alpha()
+exit_img = pygame.image.load('img/exit_btn.png').convert_alpha()
+start_img = pygame.image.load('img/start_btn.png').convert_alpha()
 
 score_coin_img = pygame.image.load('img/tile/32.png').convert_alpha()
 coin_img = pygame.transform.scale(score_coin_img, (25, 25))
@@ -163,7 +168,7 @@ class Character(pygame.sprite.Sprite):
         # falling
 
         if self.jump == True and self.jumping == False:
-            self.jump_vel = -23
+            self.jump_vel = -19
             self.jump = False
             self.jumping = True
 
@@ -200,7 +205,7 @@ class Character(pygame.sprite.Sprite):
             level_complete = True
 
         if pygame.sprite.spritecollide(self, enemy_group, False):
-            self.health -= 0.7
+            self.health -= 1.7
 
         # off the map
         if self.rect.bottom > height:
@@ -427,37 +432,12 @@ class Treasure(pygame.sprite.Sprite):
         self.rect.x += camera_scroll
 
 
-class Button:
-    def __init__(self, x, y, image, scale):
-        btn_width = image.get_width()
-        btn_height = image.get_height()
-        self.image = pygame.transform.scale(image, (int(btn_width * scale), int(btn_height * scale)))
-        self.rect = self.image.get_rect()
-        self.rect.topleft = (x, y)
-        self.clicked = False
-
-    def draw(self, surface):
-        action = False
-
-        # mouse position
-        pos = pygame.mouse.get_pos()
-
-        # check click
-        if self.rect.collidepoint(pos):
-            if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
-                action = True
-                self.clicked = True
-
-            elif pygame.mouse.get_pressed()[0] == 0:
-                self.clicked = False
-
-        surface.blit(self.image, (self.rect.x, self.rect.y))
-
-        return action
-
-
 shoot = False
-restart_btn = Button(width // 2 - 150, height // 2 - 50, restart_img, 2)
+menu = True
+
+restart_btn = Button(width // 2 - 150, height // 2 - 50, restart_img, 1.8)
+exit_btn = Button(width // 2 + 50, height // 2 - 50, exit_img, 0.5)
+start_btn = Button(width // 2 - 250, height // 2 - 50, start_img, 0.5)
 
 ammo_group = pygame.sprite.Group()
 treasure_group = pygame.sprite.Group()
@@ -485,8 +465,29 @@ with open(f'level{level}_data.csv', newline='') as csvfile:
 world = Level()
 player, hbar = world.game_data(level_layout)
 
-running = True
 
+def score_save():
+    gscore = str(game_score)
+    db = sqlite3.connect('score.db')
+    db.execute("CREATE TABLE IF NOT EXISTS score(score INTEGER)")
+    cursor = db.cursor()
+    cursor.execute("INSERT INTO score(score) VALUES (?)", (gscore,))
+    db.commit()
+    db.close()
+
+
+def score_display():
+    db = sqlite3.connect('score.db')
+    db.execute("CREATE TABLE IF NOT EXISTS score(score INTEGER)")
+    cursor = db.cursor()
+    cursor.execute("SELECT MAX(score) FROM score")
+    data = cursor.fetchone()
+    if data:
+        draw_text('High Score:' + str(data[0]), font, 'white', 370, 40)
+    db.close()
+
+
+running = True
 keys = pygame.key.get_pressed()
 
 while running:
@@ -497,13 +498,19 @@ while running:
     # screen.blit(sun_img, (100, 100))
     screen.blit(coin_img, (10, 45))
     screen.blit(bullet_count, (11, 77))
-
     world.draw()
-
     player.update()
     player.draw()
     camera_scroll, level_complete = player.move(turn_left, turn_right)
     bg_scroll = camera_scroll
+
+    if menu == True:
+        if start_btn.draw(screen):
+            click_audio.play()
+            menu = False
+        if exit_btn.draw(screen):
+            running = False
+
     if level_complete:
         level += 1
         bg_scroll = 0
@@ -520,9 +527,13 @@ while running:
         player, hbar = world.game_data(level_layout)
 
     if restart_btn.clicked is True:
+        click_audio.play()
         coin_score = 0
         score = 0
         restart_btn.clicked = False
+
+    if exit_btn.clicked is True:
+        pygame.exit()
 
     #   enemy.update()
     #   enemy.draw()
@@ -534,10 +545,14 @@ while running:
         collided_coin.kill()
         coin_score += 1
 
+    game_score = coin_score * 10
+    if player.health > player.max_health:
+        player.health = player.max_health
+
     collided_treasure = pygame.sprite.spritecollideany(player, treasure_group)
     if collided_treasure is not None and player.health < 90:
         collided_treasure.kill()
-        player.health += 5
+        player.health += 50
 
     elif collided_treasure is not None and player.bullet < 5:
         collided_treasure.kill()
@@ -545,14 +560,16 @@ while running:
         coin_audio.play()
 
     draw_text('x ' + str(coin_score), font, 'white', coin_img.get_width() + 25, 48)
-    draw_text('Level:' + str(level), font, 'white', 700, 10)
+    draw_text('Level:' + str(level + 1), font, 'white', 700, 10)
     draw_text('x ' + str(player.bullet), font, 'white', coin_img.get_width() + 25, 79)
+    draw_text('Score:' + str(game_score), font, 'white', 370, 10)
 
     for enemy in enemy_group:
         Blob.walk(enemy)
 
     if player.alive == False:
         restart_btn.draw(screen)
+        score_save()
 
     hbar.draw(player.health)
 
@@ -612,6 +629,7 @@ while running:
                 player.check_state(1)
             else:
                 player.check_state(0)
+
         else:
             camera_scroll = 0
             if restart_btn.draw(screen):
@@ -627,4 +645,6 @@ while running:
 
                 player, hbar = world.game_data(level_layout)
 
+
+    score_display()
     pygame.display.update()
